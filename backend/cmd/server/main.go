@@ -230,7 +230,7 @@ func main() {
 			
 			// Admin routes
 			admin := protected.Group("/admin")
-			admin.Use(auth.RequireRole("admin"))
+			admin.Use(authHandler.RequireRole("admin"))
 			{
 				admin.GET("/orders/statistics", orderHandler.GetOrderStatistics)
 			}

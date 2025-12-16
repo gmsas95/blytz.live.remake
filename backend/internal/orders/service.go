@@ -485,7 +485,7 @@ func (s *Service) isValidStatusTransition(currentStatus, newStatus string) bool 
 // orderToResponse converts order to response
 func (s *Service) orderToResponse(order *Order, items []OrderItem) (*OrderResponse, error) {
 	// Convert items to responses
-	itemResponses := make([]OrderItem, len(items))
+	itemResponses := make([]OrderItemResponse, len(items))
 	var totalQuantity int
 
 	for i, item := range items {
@@ -507,7 +507,7 @@ func (s *Service) orderToResponse(order *Order, items []OrderItem) (*OrderRespon
 			Status:        item.Product.Status,
 		}
 
-		itemResponses[i] = OrderItem{
+		itemResponses[i] = OrderItemResponse{
 			ID:          item.ID,
 			OrderID:     item.OrderID,
 			ProductID:   item.ProductID,

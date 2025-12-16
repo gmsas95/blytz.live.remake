@@ -3,6 +3,7 @@ package orders
 import (
 	"time"
 
+	"github.com/blytz.live.remake/backend/internal/models"
 	"github.com/google/uuid"
 )
 
@@ -34,7 +35,7 @@ type OrderItem struct {
 	Quantity    int        `json:"quantity"`
 	UnitPrice   float64    `json:"unit_price"`
 	Total       float64    `json:"total"`
-	Product     ProductResponse `json:"product"`
+	Product     models.Product `json:"product"`  // GORM will preload this
 	CreatedAt   time.Time   `json:"created_at"`
 }
 
@@ -74,26 +75,38 @@ type OrderCreateRequest struct {
 	Notes            *string    `json:"notes"`
 }
 
+// OrderItemResponse represents order item in response context
+type OrderItemResponse struct {
+	ID          uuid.UUID                `json:"id"`
+	OrderID     uuid.UUID                `json:"order_id"`
+	ProductID   uuid.UUID                `json:"product_id"`
+	Quantity    int                      `json:"quantity"`
+	UnitPrice   float64                  `json:"unit_price"`
+	Total       float64                  `json:"total"`
+	Product     ProductResponse          `json:"product"`
+	CreatedAt   time.Time                `json:"created_at"`
+}
+
 // OrderResponse represents order response
 type OrderResponse struct {
-	ID              uuid.UUID      `json:"id"`
-	UserID          uuid.UUID      `json:"user_id"`
-	Status          string         `json:"status"`
-	TotalAmount     float64        `json:"total_amount"`
-	Subtotal        float64        `json:"subtotal"`
-	TaxAmount       float64        `json:"tax_amount"`
-	ShippingCost    float64        `json:"shipping_cost"`
-	DiscountAmount  float64        `json:"discount_amount"`
-	ShippingAddress *Address       `json:"shipping_address"`
-	BillingAddress  *Address       `json:"billing_address"`
-	PaymentID       *uuid.UUID     `json:"payment_id"`
-	TrackingNumber  *string        `json:"tracking_number"`
-	Notes           *string        `json:"notes"`
-	Items          []OrderItem    `json:"items"`
-	ItemCount      int             `json:"item_count"`
-	TotalQuantity   int             `json:"total_quantity"`
-	CreatedAt      time.Time       `json:"created_at"`
-	UpdatedAt      time.Time       `json:"updated_at"`
+	ID              uuid.UUID           `json:"id"`
+	UserID          uuid.UUID           `json:"user_id"`
+	Status          string              `json:"status"`
+	TotalAmount     float64             `json:"total_amount"`
+	Subtotal        float64             `json:"subtotal"`
+	TaxAmount       float64             `json:"tax_amount"`
+	ShippingCost    float64             `json:"shipping_cost"`
+	DiscountAmount  float64             `json:"discount_amount"`
+	ShippingAddress *Address            `json:"shipping_address"`
+	BillingAddress  *Address            `json:"billing_address"`
+	PaymentID       *uuid.UUID          `json:"payment_id"`
+	TrackingNumber  *string             `json:"tracking_number"`
+	Notes           *string             `json:"notes"`
+	Items          []OrderItemResponse `json:"items"`
+	ItemCount      int                  `json:"item_count"`
+	TotalQuantity   int                  `json:"total_quantity"`
+	CreatedAt      time.Time            `json:"created_at"`
+	UpdatedAt      time.Time            `json:"updated_at"`
 }
 
 // OrderListRequest represents order list query parameters
