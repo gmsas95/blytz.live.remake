@@ -1,11 +1,10 @@
-package main
+package tests
 
 import (
 	"log"
 	"testing"
 
 	"github.com/blytz.live.remake/backend/internal/config"
-	"github.com/blytz.live.remake/backend/internal/models"
 	"github.com/blytz.live.remake/backend/internal/common"
 	"github.com/stretchr/testify/assert"
 )
