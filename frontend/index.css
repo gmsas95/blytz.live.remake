@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom CSS Variables for Blytz Theme */
+:root {
+  --blytz-black: #0a0a0a;
+  --blytz-dark: #1a1a1a;
+  --blytz-neon: #bef264;
+  --blytz-lime: #65a30d;
+  --blytz-accent: #f97316;
+}
+
+/* Custom Tailwind Classes */
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-blytz-black text-gray-100;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  
+  /* Custom fonts for cyberpunk theme */
+  .font-display {
+    font-family: 'Space Mono', 'Fira Code', monospace;
+  }
+  
+  /* Custom scrollbar */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@layer components {
+  .text-blytz-black {
+    color: var(--blytz-black);
+  }
+  
+  .bg-blytz-black {
+    background-color: var(--blytz-black);
+  }
+  
+  .bg-blytz-dark {
+    background-color: var(--blytz-dark);
+  }
+  
+  .text-blytz-neon {
+    color: var(--blytz-neon);
+  }
+  
+  .bg-blytz-neon {
+    background-color: var(--blytz-neon);
+  }
+  
+  .text-blytz-lime {
+    color: var(--blytz-lime);
+  }
+  
+  .bg-blytz-lime {
+    background-color: var(--blytz-lime);
+  }
+  
+  .text-blytz-accent {
+    color: var(--blytz-accent);
+  }
+  
+  .bg-blytz-accent {
+    background-color: var(--blytz-accent);
+  }
+  
+  .border-blytz-neon {
+    border-color: var(--blytz-neon);
+  }
+  
+  /* Line clamp utility */
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+  
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+  
+  /* Animation utilities */
+  .animate-in {
+    animation-fill-mode: both;
+  }
+  
+  .slide-in-from-right-8 {
+    --tw-enter-translate-x: 2rem;
+  }
+  
+  .slide-in-from-top-5 {
+    --tw-enter-translate-y: -1.25rem;
+  }
+}
+
+@layer utilities {
+  .tracking-tighter {
+    letter-spacing: -0.05em;
+  }
+  
+  .skew-x-[-10deg] {
+    transform: skewX(-10deg);
+  }
+}
