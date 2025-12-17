@@ -2,13 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { ShoppingBag, X, Minus, Plus, Trash2, ArrowRight, Zap, ShieldCheck, Truck, RotateCcw } from 'lucide-react';
 import { Header } from './components/Header';
 import { ProductCard } from './components/ProductCard';
-import { AuthHeader } from './components/Auth';
 import { Button, Badge } from './components/UI';
-import { CATEGORIES } from './constants';
+import { CATEGORIES, PRODUCTS } from './constants';
 import { Product, CartItem, ViewState } from './types';
-import { useProducts, useFeaturedProducts } from './hooks/useProducts';
-import { useCartStore } from './store/cartStore';
-import { useAuthStore } from './store/authStore';
 
 // Mock AI Service integration placeholder
 import { GoogleGenAI } from '@google/genai';
@@ -16,48 +12,42 @@ import { GoogleGenAI } from '@google/genai';
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('HOME');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('all');
-  
-  // Custom hooks for backend integration
-  const { products, loading, error, refetch } = useProducts();
-  const { products: featuredProducts, loading: featuredLoading } = useFeaturedProducts();
-  
-  // Store hooks
-  const { items, isCartOpen, setIsCartOpen, addItem, updateQuantity, removeFromCart, getTotal, getItemCount } = useCartStore();
-  const { isAuthenticated } = useAuthStore();
-
-  // Load cart on initial load if authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      useCartStore.getState().loadCart();
-    }
-  }, [isAuthenticated]);
 
   // --- Cart Logic ---
-  const addToCart = async (product: Product) => {
-    await addItem(product, 1);
+  const addToCart = (product: Product) => {
+    setCart(prev => {
+      const existing = prev.find(item => item.id === product.id);
+      if (existing) {
+        return prev.map(item => 
+          item.id === product.id 
+            ? { ...item, quantity: item.quantity + 1 } 
+            : item
+        );
+      }
+      return [...prev, { ...product, quantity: 1 }];
+    });
     setIsCartOpen(true);
   };
 
-  const updateQty = (productId: string, delta: number) => {
-    const existingItem = items.find(item => item.id === productId);
-    if (existingItem) {
-      const newQty = Math.max(0, existingItem.quantity + delta);
-      updateQuantity(productId, newQty);
-    }
+  const updateQty = (id: string, delta: number) => {
+    setCart(prev => prev.map(item => {
+      if (item.id === id) {
+        const newQty = Math.max(0, item.quantity + delta);
+        return { ...item, quantity: newQty };
+      }
+      return item;
+    }).filter(item => item.quantity > 0));
   };
 
-  const removeFromCartById = (productId: string) => {
-    removeFromCart(productId);
+  const removeFromCart = (id: string) => {
+    setCart(prev => prev.filter(item => item.id !== id));
   };
 
-  const cartTotal = getTotal();
-  const cartCount = getItemCount();
-
-  // Filter products based on active category
-  const filteredProducts = products.filter(p => 
-    activeCategory === 'all' || p.category.toLowerCase() === activeCategory.toLowerCase()
-  );
+  const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   // --- Views ---
 
@@ -227,37 +217,23 @@ const App: React.FC = () => {
       <section id="products" className="py-12 bg-blytz-black">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {loading && Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="aspect-square bg-blytz-dark rounded-lg mb-4"></div>
-                <div className="h-4 bg-blytz-dark rounded mb-2"></div>
-                <div className="h-6 bg-blytz-dark rounded w-3/4"></div>
-              </div>
-            ))}
-            
-            {!loading && filteredProducts.map(product => (
-              <ProductCard 
-                key={product.id} 
-                product={product} 
-                onAdd={addToCart}
-                onClick={(p) => {
-                  setSelectedProduct(p);
-                  setView('PRODUCT_DETAIL');
-                  window.scrollTo(0,0);
-                }}
-              />
+            {PRODUCTS
+              .filter(p => activeCategory === 'all' || p.category === activeCategory)
+              .map(product => (
+                <ProductCard 
+                  key={product.id} 
+                  product={product} 
+                  onAdd={addToCart}
+                  onClick={(p) => {
+                    setSelectedProduct(p);
+                    setView('PRODUCT_DETAIL');
+                    window.scrollTo(0,0);
+                  }}
+                />
             ))}
           </div>
           
-          {!loading && error && (
-            <div className="text-center py-20">
-              <h3 className="text-2xl font-bold text-gray-600">Error loading products</h3>
-              <p className="text-gray-500 mb-4">{error}</p>
-              <Button variant="ghost" onClick={refetch}>Retry</Button>
-            </div>
-          )}
-          
-          {!loading && !error && filteredProducts.length === 0 && (
+          {PRODUCTS.filter(p => activeCategory === 'all' || p.category === activeCategory).length === 0 && (
              <div className="text-center py-20">
                <h3 className="text-2xl font-bold text-gray-600">No signals found in this sector.</h3>
                <Button variant="ghost" onClick={() => setActiveCategory('all')} className="mt-4">Reset Signal</Button>
@@ -339,7 +315,7 @@ const App: React.FC = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {items.length === 0 ? (
+              {cart.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-gray-500">
                   <ShoppingBag className="w-16 h-16 mb-4 opacity-20" />
                   <p className="text-lg">Your cart is empty.</p>
@@ -352,13 +328,13 @@ const App: React.FC = () => {
                   </Button>
                 </div>
               ) : (
-                items.map(item => (
+                cart.map(item => (
                   <div key={item.id} className="flex gap-4 bg-white/5 p-4 rounded border border-white/5">
                     <img src={item.image} alt={item.title} className="w-20 h-20 object-cover rounded bg-black" />
                     <div className="flex-1">
                       <div className="flex justify-between items-start mb-1">
                         <h4 className="font-bold text-white line-clamp-1">{item.title}</h4>
-                        <button onClick={() => removeFromCartById(item.id)} className="text-gray-500 hover:text-red-500">
+                        <button onClick={() => removeFromCart(item.id)} className="text-gray-500 hover:text-red-500">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -385,7 +361,7 @@ const App: React.FC = () => {
               )}
             </div>
 
-            {items.length > 0 && (
+            {cart.length > 0 && (
               <div className="p-6 bg-blytz-black border-t border-white/10">
                 <div className="flex justify-between items-center mb-2 text-gray-400">
                   <span>Subtotal</span>
