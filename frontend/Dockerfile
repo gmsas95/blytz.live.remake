@@ -1,19 +1,19 @@
-# Frontend Dockerfile - Node.js Production Server
+# Frontend Dockerfile - Node.js Production Server (Fixed)
 FROM node:18-alpine AS builder
 
 # Set working directory
 WORKDIR /app
 
 # Copy package files
-COPY frontend/package*.json ./
+COPY package*.json ./
 
 # Install dependencies
 RUN npm ci --only=production
 
-# Copy source code
-COPY frontend/ .
+# Copy source code (fixed - no frontend/ subdirectory)
+COPY . .
 
-# Build the application
+# Build application
 RUN npm run build
 
 # Production stage with Node.js
@@ -45,5 +45,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
 
-# Start the server
+# Start of server
 CMD ["serve", "-s", "/app", "-l", "3000"]

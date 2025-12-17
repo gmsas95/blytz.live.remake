@@ -1,32 +1,36 @@
+# 🚀 Traefik + Dokploy Production Setup
+# Minimal setup: Frontend + Backend + Database + Cache
+
 version: '3.8'
 
 services:
-  # Frontend - React App (for Traefik)
+  # Frontend - React App (Node.js)
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: blytz-frontend
-    restart: always
+    restart: unless-stopped
     environment:
-      VITE_API_URL: ${VITE_API_URL:-http://backend:8080/api/v1}
-      VITE_APP_NAME: ${VITE_APP_NAME:-Blytz.live Marketplace}
+      VITE_API_URL: ${VITE_API_URL:-https://api.blytz.app/api/v1}
+      VITE_APP_NAME: ${VITE_APP_NAME:-Blytz.app Marketplace}
       VITE_APP_VERSION: ${VITE_APP_VERSION:-1.0.0}
     networks:
       - blytz-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.blytz-frontend.rule=Host(`blytz.live`)"
-      - "traefik.http.routers.blytz-frontend.entrypoints=websecure"
-      - "traefik.http.routers.blytz-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN:-blytz.app}`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls=true"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
 
-  # Backend - Go API (for Traefik)
+  # Backend - Go API
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: blytz-backend
-    restart: always
+    restart: unless-stopped
     environment:
       # Database
       DB_HOST: postgres
@@ -42,7 +46,7 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       
       # MinIO S3
-      AWS_ENDPOINT: http://minio:9000
+      AWS_ENDPOINT: ${AWS_ENDPOINT:-http://minio:9000}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-minioadmin}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_BUCKET: ${AWS_BUCKET:-blytz-marketplace}
@@ -61,7 +65,7 @@ services:
       
       # Application
       PORT: 8080
-      CORS_ORIGINS: ${CORS_ORIGINS:-https://blytz.live}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://blytz.app,https://api.blytz.app}
       ENVIRONMENT: ${ENVIRONMENT:-production}
       
       # Gemini AI
@@ -75,22 +79,22 @@ services:
       - blytz-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.blytz-backend.rule=Host(`api.blytz.live`)"
-      - "traefik.http.routers.blytz-backend.entrypoints=websecure"
-      - "traefik.http.routers.blytz-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.backend.rule=Host(`api.${DOMAIN:-blytz.app}`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls=true"
+      - "traefik.http.services.backend.loadbalancer.server.port=8080"
 
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
     container_name: blytz-postgres
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_NAME:-blytz_marketplace}
       POSTGRES_USER: ${DB_USER:-blytz_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - blytz-network
     healthcheck:
@@ -103,7 +107,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: blytz-redis
-    restart: always
+    restart: unless-stopped
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
