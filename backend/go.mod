@@ -1,6 +1,6 @@
 module github.com/blytz.live.remake/backend
 
-go 1.24.0
+go 1.21
 
 require (
 	github.com/gin-contrib/cors v1.4.0
