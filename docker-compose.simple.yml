@@ -1,8 +1,8 @@
-# 🚀 Production Setup with Traefik Reverse Proxy (Fixed Routing)
-# Complete setup: Traefik + Frontend + Backend + Database + Cache
+# 🚀 Production Setup with Traefik Reverse Proxy (HTTP Mode)
+# For testing - will work without SSL certificates
 
 services:
-  # Traefik Reverse Proxy
+  # Traefik Reverse Proxy (HTTP only for testing)
   traefik:
     image: traefik:v3.0
     container_name: blytz-traefik
@@ -15,6 +15,7 @@ services:
       - "--entrypoints.websecure.address=:443"
       - "--log.level=INFO"
       - "--accesslog=true"
+      - "--serverstransport.insecureskipverify=true"  # Skip SSL verification for testing
     ports:
       - "80:80"
       - "443:443"
@@ -29,7 +30,7 @@ services:
       - "traefik.http.routers.traefik.entrypoints=web"
       - "traefik.http.routers.traefik.service=api@internal"
 
-  # Frontend - React App
+  # Frontend - React App (Node.js)
   frontend:
     build:
       context: ./frontend
@@ -45,7 +46,7 @@ services:
       - blytz-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN:-localhost}`, `${DOMAIN:-blytz.app}`)"
       - "traefik.http.routers.frontend.entrypoints=web"
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
 
@@ -76,7 +77,7 @@ services:
       
       # Application
       PORT: 8080
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost,http://api.localhost}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost,http://blytz.app}
       ENVIRONMENT: ${ENVIRONMENT:-production}
       
       # Gemini AI
@@ -90,7 +91,7 @@ services:
       - blytz-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`api.${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.backend.rule=Host(`api.${DOMAIN:-localhost}`, `api.${DOMAIN:-blytz.app}`)"
       - "traefik.http.routers.backend.entrypoints=web"
       - "traefik.http.services.backend.loadbalancer.server.port=8080"
 
