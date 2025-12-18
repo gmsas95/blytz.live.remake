@@ -103,3 +103,39 @@ export const PRODUCTS: Product[] = [
     description: "20,000mAh in your pocket. Charge your laptop, phone, and watch simultaneously."
   }
 ];
+
+export const DROPS: Product[] = [
+  {
+    id: 'd1',
+    title: 'NeuroLink Interface V1',
+    price: 1200.00,
+    rating: 0,
+    reviews: 0,
+    image: 'https://picsum.photos/400/400?random=9',
+    category: 'Tech',
+    dropDate: '2024-11-15',
+    description: "Direct neural interface for seamless digital control."
+  },
+  {
+    id: 'd2',
+    title: 'AeroGlide Hoverboard',
+    price: 850.00,
+    rating: 0,
+    reviews: 0,
+    image: 'https://picsum.photos/400/400?random=10',
+    category: 'Active',
+    dropDate: '2024-11-20',
+    description: "True magnetic levitation. Frictionless travel."
+  },
+  {
+    id: 'd3',
+    title: 'Stealth Camo Jacket',
+    price: 450.00,
+    rating: 0,
+    reviews: 0,
+    image: 'https://picsum.photos/400/400?random=11',
+    category: 'Wearables',
+    dropDate: '2024-11-25',
+    description: "Adaptive light-bending fabric for urban evasion."
+  }
+];
