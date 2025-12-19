@@ -22,7 +22,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "9000:8080"  # Traefik dashboard
+      - "9000:8080"  # Traefik dashboard on port 9000
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - letsencrypt_data:/letsencrypt
@@ -60,7 +60,7 @@ services:
       - "traefik.http.routers.frontend-http.rule=Host(`${DOMAIN:-blytz.app}`)"
       - "traefik.http.routers.frontend-http.middlewares=frontend-https@docker"
 
-  # Backend - Go API
+  # Backend - Go API (INTERNAL PORT - NO EXTERNAL PORT)
   backend:
     build:
       context: ./backend
