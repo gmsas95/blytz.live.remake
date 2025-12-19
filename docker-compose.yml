@@ -1,8 +1,8 @@
-# 🚀 Blytz.live - Production Docker Compose
+# 🚀 Blytz.live - Production Docker Compose (Dokploy Compatible)
 # Complete setup: Traefik + Frontend + Backend + Database + Cache
 
 services:
-  # Traefik Reverse Proxy
+  # Traefik Reverse Proxy (Custom External Ports)
   traefik:
     image: traefik:v3.0
     container_name: blytz-traefik
@@ -11,8 +11,8 @@ services:
       - "--api.dashboard=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.address=:8080"
+      - "--entrypoints.websecure.address=:8443"
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
       - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-admin@blytz.app}"
@@ -20,9 +20,9 @@ services:
       - "--log.level=INFO"
       - "--accesslog=true"
     ports:
-      - "80:80"
-      - "443:443"
-      - "9000:8080"  # Traefik dashboard on port 9000
+      - "8080:8080"  # HTTP on custom port 8080
+      - "8443:8443"  # HTTPS on custom port 8443
+      - "9001:8080"  # Traefik dashboard on port 9001
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - letsencrypt_data:/letsencrypt
