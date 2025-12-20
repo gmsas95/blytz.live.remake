@@ -4,9 +4,12 @@ services:
       container_name: blytz-traefik
       restart: unless-stopped
       ports:
-        - "80:80"
-        - "443:443"
+        - "8081:80"    # HTTP on custom port
+        - "8444:443"   # HTTPS on custom port
         - "8080:8080"  # Traefik dashboard
+      environment:
+        - DOMAIN=blytz.app
+        - ACME_EMAIL=admin@blytz.app
       command:
         - --api.dashboard=true
         - --api.insecure=true  # For debugging, remove in production
