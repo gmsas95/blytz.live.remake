@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -30,7 +32,20 @@ func Logger() gin.HandlerFunc {
 // CORS middleware to handle cross-origin requests
 func CORS() gin.HandlerFunc {
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:3000"} // Allow frontend
+	
+	// Get CORS origins from environment or use defaults
+	corsOrigins := os.Getenv("CORS_ORIGINS")
+	if corsOrigins == "" {
+		corsOrigins = "http://localhost:3000"
+	}
+	
+	// Split origins by comma and trim spaces
+	origins := strings.Split(corsOrigins, ",")
+	for i, origin := range origins {
+		origins[i] = strings.TrimSpace(origin)
+	}
+	
+	config.AllowOrigins = origins
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
 	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
 	config.AllowCredentials = true

@@ -1,42 +1,67 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 )
 
 type Config struct {
 	Env            string
-	DatabaseURL    string
-	RedisURL       string
+	DatabaseHost   string
+	DatabasePort   string
+	DatabaseUser   string
+	DatabasePass   string
+	DatabaseName   string
+	DatabaseSSL    string
+	RedisHost      string
+	RedisPort      string
+	RedisPass      string
 	JWTSecret      string
+	JWTExpiresIn   string
 	ServerPort     string
 	LogLevel       string
-	LiveKitAPIKey  string
-	LiveKitSecret  string
-	LiveKitHost    string
-	AWSAccessKey   string
-	AWSSecretKey   string
-	AWSRegion      string
-	AWSS3Bucket    string
+	CORSOrigins    string
+	Environment    string
+	GeminiAPIKey   string
 }
 
 func Load() (*Config, error) {
-	return &Config{
+	cfg := &Config{
 		Env:           getEnv("ENV", "development"),
-		DatabaseURL:   getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/blytz_dev"),
-		RedisURL:      getEnv("REDIS_URL", "redis://localhost:6379"),
+		DatabaseHost:   getEnv("DB_HOST", "localhost"),
+		DatabasePort:   getEnv("DB_PORT", "5432"),
+		DatabaseUser:   getEnv("DB_USER", "postgres"),
+		DatabasePass:   getEnv("DB_PASSWORD", ""),
+		DatabaseName:   getEnv("DB_NAME", "blytz_marketplace"),
+		DatabaseSSL:    getEnv("DB_SSL_MODE", "disable"),
+		RedisHost:      getEnv("REDIS_HOST", "localhost"),
+		RedisPort:      getEnv("REDIS_PORT", "6379"),
+		RedisPass:      getEnv("REDIS_PASSWORD", ""),
 		JWTSecret:     getEnv("JWT_SECRET", "your-secret-key"),
+		JWTExpiresIn:  getEnv("JWT_EXPIRES_IN", "168h"),
 		ServerPort:    getEnv("PORT", "8080"),
-		LogLevel:      getEnv("LOG_LEVEL", "info"),
-		LiveKitAPIKey: getEnv("LIVEKIT_API_KEY", ""),
-		LiveKitSecret: getEnv("LIVEKIT_API_SECRET", ""),
-		LiveKitHost:   getEnv("LIVEKIT_HOST", ""),
-		AWSAccessKey:  getEnv("AWS_ACCESS_KEY_ID", ""),
-		AWSSecretKey:  getEnv("AWS_SECRET_ACCESS_KEY", ""),
-		AWSRegion:     getEnv("AWS_REGION", "us-east-1"),
-		AWSS3Bucket:   getEnv("AWS_S3_BUCKET", ""),
-	}, nil
+		LogLevel:       getEnv("LOG_LEVEL", "info"),
+		CORSOrigins:   getEnv("CORS_ORIGINS", "http://localhost:3000"),
+		Environment:    getEnv("ENVIRONMENT", "development"),
+		GeminiAPIKey:  getEnv("GEMINI_API_KEY", ""),
+	}
+
+	return cfg, nil
+}
+
+// DatabaseURL returns the PostgreSQL connection string
+func (c *Config) DatabaseURL() string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+		c.DatabaseUser, c.DatabasePass, c.DatabaseHost, c.DatabasePort, c.DatabaseName, c.DatabaseSSL)
+}
+
+// RedisURL returns the Redis connection string
+func (c *Config) RedisURL() string {
+	if c.RedisPass != "" {
+		return fmt.Sprintf("redis://:%s@%s:%s", c.RedisPass, c.RedisHost, c.RedisPort)
+	}
+	return fmt.Sprintf("redis://%s:%s", c.RedisHost, c.RedisPort)
 }
 
 func getEnv(key, defaultValue string) string {

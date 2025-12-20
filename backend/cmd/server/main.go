@@ -37,9 +37,9 @@ func main() {
 		log.Fatal("Failed to load config:", err)
 	}
 
-	// Initialize database (using SQLite for demo)
+	// Initialize database (using environment config)
 	var db *gorm.DB
-	db, err = database.NewConnection(cfg.DatabaseURL)
+	db, err = database.NewConnection(cfg.DatabaseURL())
 	if err != nil {
 		log.Printf("Warning: Failed to connect to database: %v", err)
 		db = nil
@@ -90,9 +90,9 @@ func main() {
 		}
 	}
 
-	// Initialize Redis (optional for demo)
+	// Initialize Redis (using environment config)
 	var redisClient *redis.Client
-	redisClient = database.NewRedisClient(cfg.RedisURL)
+	redisClient = database.NewRedisClient(cfg.RedisURL())
 	if redisClient == nil {
 		log.Println("Warning: Failed to connect to Redis (continuing without cache)")
 	}
