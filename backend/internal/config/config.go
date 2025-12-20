@@ -47,28 +47,6 @@ func Load() (*Config, error) {
 		GeminiAPIKey:  getEnv("GEMINI_API_KEY", ""),
 	}
 
-	// Debug: Log environment variables (remove in production)
-	fmt.Printf("=== DEBUG: Environment Variables ===\n")
-	fmt.Printf("DB_HOST: %s\n", cfg.DatabaseHost)
-	fmt.Printf("DB_PORT: %s\n", cfg.DatabasePort)
-	fmt.Printf("DB_USER: %s\n", cfg.DatabaseUser)
-	fmt.Printf("DB_PASSWORD: [MASKED if present]\n")
-	if cfg.DatabasePass == "" {
-		fmt.Printf("DB_PASSWORD: (EMPTY)\n")
-	} else {
-		fmt.Printf("DB_PASSWORD: (SET, length=%d)\n", len(cfg.DatabasePass))
-	}
-	fmt.Printf("DB_NAME: %s\n", cfg.DatabaseName)
-	fmt.Printf("REDIS_HOST: %s\n", cfg.RedisHost)
-	fmt.Printf("REDIS_PORT: %s\n", cfg.RedisPort)
-	fmt.Printf("REDIS_PASSWORD: [MASKED if present]\n")
-	if cfg.RedisPass == "" {
-		fmt.Printf("REDIS_PASSWORD: (EMPTY)\n")
-	} else {
-		fmt.Printf("REDIS_PASSWORD: (SET, length=%d)\n", len(cfg.RedisPass))
-	}
-	fmt.Printf("===================================\n")
-
 	return cfg, nil
 }
 
