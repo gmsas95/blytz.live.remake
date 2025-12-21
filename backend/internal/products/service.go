@@ -3,6 +3,7 @@ package products
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/blytz.live.remake/backend/internal/common"
 	"github.com/blytz.live.remake/backend/internal/models"
@@ -492,4 +493,48 @@ func (s *Service) toProductResponse(product *models.Product, includeSeller bool,
 	}
 
 	return resp
+}
+
+// GetFlashProducts retrieves all active flash sale products
+func (s *Service) GetFlashProducts() ([]ProductResponse, error) {
+	var products []models.Product
+	err := s.db.Where("is_flash = ? AND flash_end > ?", true, time.Now()).
+		Preload("Seller").
+		Preload("Category").
+		Order("created_at DESC").
+		Limit(20).
+		Find(&products).Error
+	
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch flash products: %w", err)
+	}
+
+	responses := make([]ProductResponse, len(products))
+	for i, product := range products {
+		responses[i] = s.mapToProductResponse(&product)
+	}
+
+	return responses, nil
+}
+
+// GetHotProducts retrieves all hot products
+func (s *Service) GetHotProducts() ([]ProductResponse, error) {
+	var products []models.Product
+	err := s.db.Where("is_hot = ?", true).
+		Preload("Seller").
+		Preload("Category").
+		Order("created_at DESC").
+		Limit(20).
+		Find(&products).Error
+	
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch hot products: %w", err)
+	}
+
+	responses := make([]ProductResponse, len(products))
+	for i, product := range products {
+		responses[i] = s.mapToProductResponse(&product)
+	}
+
+	return responses, nil
 }

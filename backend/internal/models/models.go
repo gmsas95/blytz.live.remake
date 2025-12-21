@@ -56,6 +56,24 @@ type Product struct {
 	Featured      bool      `gorm:"default:false" json:"featured"`
 	ViewCount     int       `gorm:"default:0" json:"view_count"`
 	HasVariants   bool      `gorm:"default:false" json:"has_variants"`
+	// Enhanced fields for Gemini3-mock integration
+	Rating        float64   `gorm:"default:0" json:"rating"`
+	ReviewCount   int       `gorm:"default:0" json:"review_count"`
+	IsFlash       bool      `gorm:"default:false" json:"is_flash"`
+	IsHot         bool      `gorm:"default:false" json:"is_hot"`
+	FlashEnd      *time.Time `json:"flash_end,omitempty"`
+}
+
+// Review represents a product review
+type Review struct {
+	common.BaseModel
+	ProductID uuid.UUID `gorm:"not null;references:ID;index" json:"product_id"`
+	Product   Product  `gorm:"foreignKey:ProductID" json:"product,omitempty"`
+	UserID    uuid.UUID `gorm:"not null;references:ID;index" json:"user_id"`
+	User      User     `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	Rating    int       `gorm:"not null;check:rating >= 1 AND rating <= 5" json:"rating"`
+	Comment   string    `gorm:"type:text" json:"comment"`
+	Status    string    `gorm:"default:'approved'" json:"status"` // 'pending', 'approved', 'rejected'
 }
 
 // Order represents a customer order

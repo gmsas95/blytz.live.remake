@@ -190,6 +190,8 @@ func main() {
 		{
 			productsGroup.GET("", productHandler.ListProducts)
 			productsGroup.GET("/:id", productHandler.GetProduct)
+			productsGroup.GET("/flash", productHandler.GetFlashProducts)
+			productsGroup.GET("/hot", productHandler.GetHotProducts)
 		}
 		
 		// Public catalog routes
