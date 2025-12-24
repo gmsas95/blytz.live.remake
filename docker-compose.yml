@@ -1,4 +1,5 @@
-# Simple Docker Compose - Production Ready
+# Blytz.live - Production Ready Docker Compose
+# Based on working blytz.work configuration
 
 services:
   # PostgreSQL Database
@@ -10,28 +11,36 @@ services:
       POSTGRES_DB: blytz_marketplace
       POSTGRES_USER: blytz_user
       POSTGRES_PASSWORD: secure_blytz_password_2024
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - blytzlive-internal
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U blytz_user"]
+      test:
+        - CMD
+        - sh
+        - -c
+        - pg_isready -U blytz_user -d blytz_marketplace
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
 
   # Redis Cache
   redis:
-    image: redis:8-alpine
+    image: redis:7-alpine
     container_name: blytzlive-redis
     restart: unless-stopped
     command: redis-server --appendonly yes
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - blytzlive-internal
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test:
+        - CMD
+        - redis-cli
+        - ping
       interval: 10s
       timeout: 3s
       retries: 5
@@ -44,24 +53,40 @@ services:
     container_name: blytzlive-backend
     restart: unless-stopped
     environment:
-      ENV: development
+      ENV: production
+      PORT: 8080
       DATABASE_URL: postgres://blytz_user:secure_blytz_password_2024@postgres:5432/blytz_marketplace
       REDIS_URL: redis://redis:6379
       JWT_SECRET: super_secret_jwt_key_change_in_production_2024
-      LOG_LEVEL: debug
-      PORT: 8080
-    ports:
-      - "8081:8080"
+      LOG_LEVEL: warn
+      API_URL: https://api.blytz.app
+      FRONTEND_URL: https://blytz.app
+      ALLOWED_ORIGINS: https://blytz.app,https://staging.blytz.app,https://www.blytz.app
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      - blytzlive-internal
+      - dokploy-network
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
+      test:
+        - CMD
+        - curl
+        - -f
+        - http://localhost:8080/
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 60s
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.blytzlive-backend.loadbalancer.server.port=8080
+      - traefik.http.routers.blytzlive-backend.rule=Host(`api.blytz.app`)
+      - traefik.http.routers.blytzlive-backend.entrypoints=websecure
+      - traefik.http.routers.blytzlive-backend.tls.certresolver=letsencrypt
+      - traefik.http.routers.blytzlive-backend.service=blytzlive-backend
 
   # Frontend
   frontend:
@@ -71,19 +96,48 @@ services:
     container_name: blytzlive-frontend
     restart: unless-stopped
     environment:
-      VITE_API_URL: http://localhost:8081/api/v1
+      ENV: production
       PORT: 3000
-    ports:
-      - "3001:3000"
+      VITE_API_URL: https://api.blytz.app/api/v1
+      VITE_APP_NAME: Blytz.app Live Auction Marketplace
+      VITE_APP_URL: https://blytz.app
     depends_on:
-      - backend
-    command: npm run dev
+      backend:
+        condition: service_healthy
+    networks:
+      - blytzlive-internal
+      - dokploy-network
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      test:
+        - CMD
+        - wget
+        - --no-verbose
+        - --tries=1
+        - --spider
+        - http://0.0.0.0:3000/
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 60s
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.blytzlive-frontend.loadbalancer.server.port=3000
+      - traefik.http.routers.blytzlive-frontend.rule=Host(`blytz.app`) ||
+        Host(`staging.blytz.app`)
+      - traefik.http.routers.blytzlive-frontend.entrypoints=websecure
+      - traefik.http.routers.blytzlive-frontend.tls.certresolver=letsencrypt
+      - traefik.http.routers.blytzlive-frontend.service=blytzlive-frontend
 
 volumes:
   postgres_data:
+    driver: local
   redis_data:
+    driver: local
+
+networks:
+  blytzlive-internal:
+    driver: bridge
+    internal: false
+  dokploy-network:
+    external: true
+    name: dokploy-network
