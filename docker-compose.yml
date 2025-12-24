@@ -70,14 +70,6 @@ services:
     networks:
       - blytzlive-internal
       - dokploy-network
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - "pgrep -f blytz-server || exit 1"
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
     labels:
       - traefik.enable=true
       - traefik.http.services.blytzlive-backend.loadbalancer.server.port=8080
@@ -100,23 +92,10 @@ services:
       VITE_APP_NAME: Blytz.app Live Auction Marketplace
       VITE_APP_URL: https://blytz.app
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     networks:
       - blytzlive-internal
       - dokploy-network
-    healthcheck:
-      test:
-        - CMD
-        - wget
-        - --no-verbose
-        - --tries=1
-        - --spider
-        - http://0.0.0.0:3000/
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
     labels:
       - traefik.enable=true
       - traefik.http.services.blytzlive-frontend.loadbalancer.server.port=3000
