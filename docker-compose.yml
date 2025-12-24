@@ -52,7 +52,6 @@ services:
       dockerfile: Dockerfile
     env_file:
       - ./.env
-      - ./backend/.env
     container_name: blytzlive-backend
     restart: unless-stopped
     environment:
@@ -88,7 +87,6 @@ services:
       dockerfile: Dockerfile
     env_file:
       - ./.env
-      - ./frontend/.env
     container_name: blytzlive-frontend
     restart: unless-stopped
     environment:
