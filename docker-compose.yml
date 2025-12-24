@@ -9,16 +9,15 @@ services:
     container_name: blytzlive-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-blytz_dev}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-blytz_dev}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/prisma:/docker-entrypoint-initdb.d
     networks:
       - blytzlive-internal
     healthcheck:
-      test: ["CMD", "sh", "-c", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-blytz_dev}"]
+      test: ["CMD", "sh", "-c", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-blytz_dev}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -49,7 +48,7 @@ services:
     restart: unless-stopped
     environment:
       ENV: development
-      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-blytz_dev}
+      DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-blytz_dev}
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-dev-secret-key}
       LOG_LEVEL: ${LOG_LEVEL:-debug}
