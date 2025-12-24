@@ -51,7 +51,7 @@ services:
       LOG_LEVEL: debug
       PORT: 8080
     ports:
-      - "8080:8080"
+      - "8081:8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -71,7 +71,7 @@ services:
     container_name: blytzlive-frontend
     restart: unless-stopped
     environment:
-      VITE_API_URL: https://api.blytz.app/api/v1
+      VITE_API_URL: http://localhost:8081/api/v1
       PORT: 3000
     ports:
       - "3000:3000"
