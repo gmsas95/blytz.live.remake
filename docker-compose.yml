@@ -57,13 +57,22 @@ services:
     environment:
       ENV: production
       PORT: 8080
-      DATABASE_URL: postgres://blytz_user:secure_blytz_password_2024@postgres:5432/blytz_marketplace
-      REDIS_URL: redis://redis:6379
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: blytz_user
+      DB_PASSWORD: secure_blytz_password_2024
+      DB_NAME: blytz_marketplace
+      DB_SSL_MODE: require
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
       JWT_SECRET: super_secret_jwt_key_change_in_production_2024
       LOG_LEVEL: warn
       API_URL: https://api.blytz.app
       FRONTEND_URL: https://blytz.app
       ALLOWED_ORIGINS: https://blytz.app,https://staging.blytz.app,https://www.blytz.app
+      STRIPE_SECRET_KEY: sk_test_placeholder_change_in_production
+      STRIPE_WEBHOOK_SECRET: whsec_placeholder_change_in_production
     depends_on:
       postgres:
         condition: service_healthy
