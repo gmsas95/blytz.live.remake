@@ -21,12 +21,11 @@ import (
 	"github.com/blytz.live.remake/backend/internal/products"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
-	"github.com/blytz.live.remake/backend/internal/cache"
 
 	"github.com/gin-contrib/cors"
+)
 
 func stringPtr(s string) *string {
 	return &s
@@ -40,11 +39,6 @@ func getEnv(key, defaultValue string) string {
 }
 
 func main() {
-	// Load environment variables
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found")
-	}
-
 	// Initialize configuration
 	cfg, err := config.Load()
 	if err != nil {
@@ -125,18 +119,7 @@ func main() {
 	redisClient = database.NewRedisClient(cfg.RedisURL())
 	if redisClient == nil {
 		log.Println("Warning: Failed to connect to Redis (continuing without cache)")
-	}
-
-	// Setup CORS middleware
-	cors := cors.New(cors.Config{
-		AllowAllOrigins: []string{"https://blytz.app", "http://localhost:5173", "http://localhost:3000", "http://localhost:8080"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Authorization", "Content-Type", "X-Requested-With"},
-		AllowCredentials: true,
-	})
-	router.Use(cors)
-
-	// Initialize database (using environment config) else {
+	} else {
 		log.Println("✅ Redis connected")
 
 		// Initialize cache client
@@ -159,7 +142,7 @@ func main() {
 
 	// Add CORS middleware
 	cors := cors.New(cors.Config{
-		AllowAllOrigins: []string{"https://blytz.app", "http://localhost:5173", "http://localhost:3000", "http://localhost:8080"},
+		AllowOrigins:     []string{"https://blytz.app", "http://localhost:5173", "http://localhost:3000", "http://localhost:8080"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Authorization", "Content-Type", "X-Requested-With"},
 		AllowCredentials: true,
