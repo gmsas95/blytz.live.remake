@@ -312,7 +312,6 @@ func main() {
 		// Payment routes
 		paymentsGroup := v1.Group("/payments")
 		{
-			paymentsGroup.GET("/methods", paymentHandler.GetPaymentMethods)
 			paymentsGroup.POST("/intents", paymentHandler.CreatePaymentIntent)
 			paymentsGroup.POST("/confirm", paymentHandler.ConfirmPayment)
 		}
