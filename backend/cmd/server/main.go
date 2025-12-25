@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/blytz.live.remake/backend/internal/addresses"
 	"github.com/blytz.live.remake/backend/internal/auction"
 	"github.com/blytz.live.remake/backend/internal/auth"
 	"github.com/blytz.live.remake/backend/internal/cache"
@@ -241,6 +242,10 @@ func main() {
 		paymentService = payments.NewService(db, cfg.StripeSecretKey)
 		paymentHandler = payments.NewHandler(paymentService)
 
+		// Initialize address service
+		addressService := addresses.NewService(db)
+		addressHandler := addresses.NewHandler(addressService)
+
 		// Set Stripe webhook secret in handler context (using a global variable for now)
 		// router.Set("stripe_webhook_secret", cfg.StripeWebhookSecret)
 
@@ -376,8 +381,13 @@ func main() {
 				protectedPaymentGroup.GET("/:id", paymentHandler.GetPaymentIntent)
 			}
 
+			// Address routes
+			addressHandler.RegisterRoutes(v1.Group("/"), authHandler)
+
 			// Protected LiveKit routes (temporarily disabled)
 			// protectedLivekitGroup := protected.Group("/livekit")
+			// protectedLivekitGroup.Use(authHandler.RequireAuth())
+			// protectedLivekitGroup.Use(authHandler.RequireSellerOrAdmin())
 			// {
 			// 	protectedLivekitGroup.POST("/auctions/:auction_id/rooms", livekitHandler.CreateAuctionRoom)
 			// 	protectedLivekitGroup.GET("/auctions/:auction_id/token/host", livekitHandler.GetHostToken)

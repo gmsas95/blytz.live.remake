@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { CheckCircle, CreditCard, Zap, ShoppingBag } from 'lucide-react';
+import { CheckCircle, CreditCard, Zap, ShoppingBag, AlertCircle } from 'lucide-react';
 import { Button, Badge, Input } from './UI';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
+import { orderService } from '../../services/orderService';
+import { paymentService } from '../../services/paymentService';
 
 interface CheckoutProps {
   onComplete: () => void;
@@ -14,12 +16,20 @@ export const Checkout: React.FC<CheckoutProps> = ({ onComplete, onBack }) => {
   const auth = useAuthStore();
 
   const [checkoutStep, setCheckoutStep] = useState(1);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState('');
+  const [orderId, setOrderId] = useState<string | null>(null);
+  
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     address: '',
+    address2: '',
     city: '',
+    state: '',
     zipCode: '',
+    country: 'US',
+    phone: '',
     cardNumber: '',
     cardExpiry: '',
     cvv: ''
@@ -27,27 +37,79 @@ export const Checkout: React.FC<CheckoutProps> = ({ onComplete, onBack }) => {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleStepChange = (step: number) => {
-    setCheckoutStep(step);
+    setError('');
   };
 
   const handleSubmit = async () => {
     if (!auth.user) {
-      alert('Please login to complete your purchase');
+      setError('Please login to complete your purchase');
       return;
     }
 
-    if (checkoutStep === 3) {
+    if (checkoutStep === 1) {
+      setCheckoutStep(2);
+      return;
+    }
+
+    if (checkoutStep === 2) {
+      setIsProcessing(true);
+      setError('');
+
       try {
+        // Step 1: Create order with shipping and billing addresses
+        const order = await orderService.createOrder({
+          shipping_address: {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            address_line1: formData.address,
+            address_line2: formData.address2 || undefined,
+            city: formData.city,
+            state: formData.state,
+            postal_code: formData.zipCode,
+            country: formData.country,
+            phone: formData.phone || undefined
+          },
+          billing_address: {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            address_line1: formData.address,
+            address_line2: formData.address2 || undefined,
+            city: formData.city,
+            state: formData.state,
+            postal_code: formData.zipCode,
+            country: formData.country
+          }
+        });
+
+        setOrderId(order.id);
+
+        // Step 2: Create payment intent
+        const paymentIntent = await paymentService.createPaymentIntent({
+          amount: Math.round(cart.getTotal() * 100), // Convert to cents
+          currency: 'usd',
+          metadata: {
+            order_id: order.id
+          }
+        });
+
+        // Step 3: Simulate payment confirmation (in production, this would use Stripe.js)
+        await paymentService.confirmPayment({
+          payment_intent_id: paymentIntent.id
+        });
+
+        // Step 4: Clear cart and show confirmation
         await cart.clearCart();
-        onComplete();
-      } catch (error) {
-        console.error('Checkout failed:', error);
+        setCheckoutStep(3);
+      } catch (err: any) {
+        console.error('Checkout failed:', err);
+        setError(err.response?.data?.error || err.message || 'Payment failed. Please try again.');
+      } finally {
+        setIsProcessing(false);
       }
-    } else {
-      handleStepChange(checkoutStep + 1);
+    }
+
+    if (checkoutStep === 3) {
+      onComplete();
     }
   };
 
@@ -57,6 +119,14 @@ export const Checkout: React.FC<CheckoutProps> = ({ onComplete, onBack }) => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
         <div className="lg:col-span-2 space-y-8">
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              {error}
+            </div>
+          )}
+
+          {/* Step 1: Shipping */}
           {checkoutStep === 1 && (
             <div className="border border-blytz-neon/50 bg-blytz-dark/50 p-6 rounded transition-all">
               <div className="flex items-center gap-4 mb-6">
@@ -70,12 +140,14 @@ export const Checkout: React.FC<CheckoutProps> = ({ onComplete, onBack }) => {
                   value={formData.firstName}
                   onChange={(e) => handleInputChange('firstName', e.target.value)}
                   placeholder="John"
+                  required
                 />
                 <Input
                   label="Last Name"
                   value={formData.lastName}
                   onChange={(e) => handleInputChange('lastName', e.target.value)}
                   placeholder="Doe"
+                  required
                 />
                 <Input
                   label="Address Line 1"
@@ -83,26 +155,52 @@ export const Checkout: React.FC<CheckoutProps> = ({ onComplete, onBack }) => {
                   value={formData.address}
                   onChange={(e) => handleInputChange('address', e.target.value)}
                   placeholder="123 Market Street"
+                  required
+                />
+                <Input
+                  label="Address Line 2"
+                  className="md:col-span-2"
+                  value={formData.address2}
+                  onChange={(e) => handleInputChange('address2', e.target.value)}
+                  placeholder="Apt 4B"
                 />
                 <Input
                   label="City"
                   value={formData.city}
                   onChange={(e) => handleInputChange('city', e.target.value)}
                   placeholder="San Francisco"
+                  required
+                />
+                <Input
+                  label="State"
+                  value={formData.state}
+                  onChange={(e) => handleInputChange('state', e.target.value)}
+                  placeholder="CA"
+                  required
                 />
                 <Input
                   label="Zip Code"
                   value={formData.zipCode}
                   onChange={(e) => handleInputChange('zipCode', e.target.value)}
                   placeholder="94102"
+                  required
+                />
+                <Input
+                  label="Phone"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  placeholder="+1 (555) 123-4567"
                 />
                 <div className="md:col-span-2 mt-4">
-                  <Button onClick={() => handleStepChange(2)} className="w-full">Proceed to Payment</Button>
+                  <Button onClick={handleSubmit} isLoading={isProcessing} className="w-full">
+                    Proceed to Payment
+                  </Button>
                 </div>
               </div>
             </div>
           )}
 
+          {/* Step 2: Payment */}
           {checkoutStep === 2 && (
             <div className={`border ${checkoutStep >= 2 ? 'border-blytz-neon/50 bg-blytz-dark/50' : 'border-white/10 bg-transparent'} p-6 rounded transition-all`}>
               <div className="flex items-center gap-4 mb-6">
@@ -110,7 +208,7 @@ export const Checkout: React.FC<CheckoutProps> = ({ onComplete, onBack }) => {
                 <h2 className="text-xl font-bold text-white">PAYMENT UPLINK</h2>
               </div>
 
-              {checkoutStep > 2 && <div className="text-green-400 flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Data Secured</div>}
+              {checkoutStep > 2 && <div className="text-green-400 flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Payment Secured</div>}
 
               {checkoutStep === 2 && (
                 <div className="space-y-4">
@@ -150,31 +248,37 @@ export const Checkout: React.FC<CheckoutProps> = ({ onComplete, onBack }) => {
                     />
                   </div>
 
-                  <Button onClick={() => handleStepChange(3)} className="w-full mt-4">
-                    Establish Uplink (Pay ${cart.getTotal().toFixed(2)})
+                  <Button onClick={handleSubmit} isLoading={isProcessing} className="w-full mt-4">
+                    {isProcessing ? 'Processing...' : `Establish Uplink (Pay $${cart.getTotal().toFixed(2)})`}
                   </Button>
                 </div>
               )}
             </div>
           )}
 
+          {/* Step 3: Confirmation */}
           {checkoutStep === 3 && (
             <div className="bg-blytz-neon/10 border border-blytz-neon p-8 rounded text-center animate-pulse-fast">
-              <Zap className="w-16 h-16 text-blytz-neon mx-auto mb-4" />
+              <CheckCircle className="w-16 h-16 text-blytz-neon mx-auto mb-4" />
               <h2 className="text-3xl font-display font-bold text-white mb-2">ORDER CONFIRMED</h2>
-              <p className="text-gray-400 mb-6">
+              <p className="text-gray-400 mb-2">
                 {auth.user ? `${auth.user.first_name}, your ` : 'Your'} haul has been secured!
-                <br />
+              </p>
+              {orderId && (
+                <p className="text-blytz-neon font-mono mb-4">Order ID: {orderId}</p>
+              )}
+              <p className="text-gray-400 mb-6">
                 Dispatch drones are spooling up. Estimated arrival:{' '}
                 <span className="text-blytz-neon font-mono">T-minus 2 hours</span>.
               </p>
               <Button onClick={handleSubmit} className="mt-4">
-                {auth.user ? 'Return to Home' : 'Login to Continue'}
+                Return to Home
               </Button>
             </div>
           )}
         </div>
 
+        {/* Order Summary */}
         <div className="bg-blytz-dark border border-white/10 p-6 h-fit rounded sticky top-24">
           <h3 className="text-lg font-bold text-white mb-4 border-b border-white/10 pb-2">ORDER MANIFEST</h3>
           <div className="space-y-4 mb-6">
@@ -222,7 +326,11 @@ export const Checkout: React.FC<CheckoutProps> = ({ onComplete, onBack }) => {
                 <span>Shipping</span>
                 <span className="text-blytz-neon">FREE (Blytz Prime)</span>
               </div>
-              <div className="flex justify-between items-center mb-6 text-xl font-bold text-white mt-4">
+              <div className="flex justify-between items-center mb-2 text-gray-400">
+                <span>Tax</span>
+                <span>$0.00</span>
+              </div>
+              <div className="flex justify-between items-center mb-6 text-xl font-bold text-white mt-4 pt-4 border-t border-white/10">
                 <span>Total</span>
                 <span>${cart.getTotal().toFixed(2)}</span>
               </div>

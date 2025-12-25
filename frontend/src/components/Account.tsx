@@ -27,7 +27,9 @@ export const Account: React.FC<AccountProps> = ({ onViewChange }) => {
     setIsLoading(true);
 
     try {
-      await auth.updateUser({
+      // Update profile via API would go here
+      // For now, update local state
+      auth.updateUser({
         email: formData.email,
         first_name: formData.firstName,
         last_name: formData.lastName,

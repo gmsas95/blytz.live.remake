@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, User, Lock, Mail, Phone } from 'lucide-react';
 import { Button } from './UI';
 import { useAuthStore } from '../../store/authStore';
-import { api } from '../../services/api';
+import { authService } from '../../services/authService';
 
 interface RegisterProps {
   onClose: () => void;
@@ -27,14 +27,22 @@ export const Register: React.FC<RegisterProps> = ({ onClose, onSwitchToLogin }) 
     setIsLoading(true);
 
     try {
-      const response = await api.post('/auth/register', formData);
-      const { user, access_token, refresh_token } = response.data;
-
-      auth.login(user, access_token, refresh_token);
+      const response = await authService.register(formData);
+      // Register returns user object, we need to handle token storage
+      const user = response;
+      
+      // Auto-login after registration
+      const loginResponse = await authService.login({
+        email: formData.email,
+        password: formData.password
+      });
+      
+      const { user: loginUser, access_token, refresh_token } = loginResponse;
+      auth.login(loginUser, access_token, refresh_token);
       onClose();
     } catch (err: any) {
       console.error('Registration failed:', err);
-      setError(err.response?.data?.error || 'Registration failed. Please try again.');
+      setError(err.response?.data?.error || err.message || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, User, Lock, Mail } from 'lucide-react';
 import { Button } from './UI';
 import { useAuthStore } from '../../store/authStore';
-import { api } from '../../services/api';
+import { authService } from '../../services/authService';
 
 interface LoginProps {
   onClose: () => void;
@@ -24,14 +24,14 @@ export const Login: React.FC<LoginProps> = ({ onClose, onSwitchToRegister }) => 
     setIsLoading(true);
 
     try {
-      const response = await api.post('/auth/login', formData);
-      const { user, access_token, refresh_token } = response.data;
+      const response = await authService.login(formData);
+      const { user, access_token, refresh_token } = response;
 
       auth.login(user, access_token, refresh_token);
       onClose();
     } catch (err: any) {
       console.error('Login failed:', err);
-      setError(err.response?.data?.error || 'Invalid email or password');
+      setError(err.response?.data?.error || err.message || 'Invalid email or password');
     } finally {
       setIsLoading(false);
     }
