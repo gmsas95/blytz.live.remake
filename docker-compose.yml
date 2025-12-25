@@ -62,7 +62,7 @@ services:
       ENV: production
       DB_SSL_MODE: disable
       PORT: 8080
-      DB_HOST: postgres
+      DB_HOST: 172.21.0.2
       DB_PORT: 5432
       DB_USER: ${POSTGRES_USER:-blytz_user}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
