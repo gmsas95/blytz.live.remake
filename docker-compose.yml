@@ -59,14 +59,14 @@ services:
     container_name: blytzlive-backend
     restart: unless-stopped
     environment:
-      ENV: ${ENV:-production}
+      ENV: production
+      DB_SSL_MODE: disable
       PORT: 8080
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: ${POSTGRES_USER:-blytz_user}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: ${POSTGRES_DB:-blytz_marketplace}
-      DB_SSL_MODE: disable
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}

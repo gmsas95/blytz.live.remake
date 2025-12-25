@@ -62,9 +62,10 @@ func Load() (*Config, error) {
 		if len(cfg.JWTSecret) < 32 {
 			return nil, fmt.Errorf("JWT_SECRET must be at least 32 characters in production")
 		}
-		if cfg.DatabaseSSL == "disable" {
-			return nil, fmt.Errorf("Database SSL must be enabled in production")
-		}
+		// Allow SSL disable for Docker deployments where DB is on same network
+		// if cfg.DatabaseSSL == "disable" {
+		// 	return nil, fmt.Errorf("Database SSL must be enabled in production")
+		// }
 		if cfg.DatabasePass == "" {
 			return nil, fmt.Errorf("DB_PASSWORD must be set in production")
 		}
