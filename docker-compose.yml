@@ -1,74 +1,50 @@
-# Blytz.live - Production Ready Docker Compose
-# Based on working blytz.work configuration
-
 services:
-  # PostgreSQL Database
+   # PostgreSQL Database
   postgres:
-    image: postgres:15-alpine
-    container_name: blytzlive-postgres
+    image: postgres:16-alpine
     restart: unless-stopped
-    env_file:
-      - ./.env
     environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-blytz_marketplace}
-      POSTGRES_USER: ${POSTGRES_USER:-blytz_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - blytzlive-internal
     healthcheck:
-      test:
-        - CMD
-        - sh
-        - -c
-        - pg_isready -U ${POSTGRES_USER:-blytz_user} -d ${POSTGRES_DB:-blytz_marketplace}
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-blytz_marketplace}"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
 
-  # Redis Cache
+   # Redis Cache
   redis:
     image: redis:7-alpine
-    container_name: blytzlive-redis
     restart: unless-stopped
-    env_file:
-      - ./.env
-    command: >
-      sh -c 'if [ -n "$${REDIS_PASSWORD}" ]; then redis-server --appendonly yes --requirepass $${REDIS_PASSWORD}; else redis-server --appendonly yes; fi'
+    command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
-    networks:
-      - blytzlive-internal
     healthcheck:
-      test:
-        - CMD
-        - sh
-        - -c
-        - 'if [ -n "$${REDIS_PASSWORD}" ]; then redis-cli -a $${REDIS_PASSWORD} ping; else redis-cli ping; fi'
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
-      timeout: 3s
+      timeout: 5s
       retries: 5
 
-  # Backend API
+   # Backend API
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    env_file:
-      - ./.env
-    container_name: blytzlive-backend
     restart: unless-stopped
+    expose:
+      - "8080"
     environment:
       ENV: ${ENV:-production}
       PORT: ${PORT:-8080}
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_USER: ${POSTGRES_USER:-blytz_user}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       DB_NAME: ${POSTGRES_DB:-blytz_marketplace}
-      DB_SSL_MODE: ${DB_SSL_MODE:-require}
+      DB_SSL_MODE: ${DB_SSL_MODE:-disable}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
@@ -85,56 +61,38 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    networks:
-      - blytzlive-internal
-      - dokploy-network
-    labels:
-      - traefik.enable=true
-      - traefik.http.services.blytzlive-backend.loadbalancer.server.port=8080
-      - traefik.http.routers.blytzlive-backend.rule=Host(`api.blytz.app`)
-      - traefik.http.routers.blytzlive-backend.entrypoints=websecure
-      - traefik.http.routers.blytzlive-backend.tls.certresolver=letsencrypt
-      - traefik.http.routers.blytzlive-backend.service=blytzlive-backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
-  # Frontend
+   # Frontend
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    env_file:
-      - ./.env
-    container_name: blytzlive-frontend
     restart: unless-stopped
+    expose:
+      - "3000"
     environment:
       ENV: production
       PORT: 3000
-      VITE_API_URL: https://api.blytz.app/api/v1
+      VITE_API_URL: ${VITE_API_URL:-https://api.blytz.app/api/v1}
       VITE_APP_NAME: Blytz.app Live Auction Marketplace
-      VITE_APP_URL: https://blytz.app
+      VITE_APP_URL: ${VITE_APP_URL:-https://blytz.app}
     depends_on:
       - backend
-    networks:
-      - blytzlive-internal
-      - dokploy-network
-    labels:
-      - traefik.enable=true
-      - traefik.http.services.blytzlive-frontend.loadbalancer.server.port=3000
-      - traefik.http.routers.blytzlive-frontend.rule=Host(`blytz.app`) ||
-        Host(`staging.blytz.app`)
-      - traefik.http.routers.blytzlive-frontend.entrypoints=websecure
-      - traefik.http.routers.blytzlive-frontend.tls.certresolver=letsencrypt
-      - traefik.http.routers.blytzlive-frontend.service=blytzlive-frontend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 volumes:
   postgres_data:
     driver: local
   redis_data:
     driver: local
-
-networks:
-  blytzlive-internal:
-    driver: bridge
-    internal: false
-  dokploy-network:
-    external: true
-    name: dokploy-network
