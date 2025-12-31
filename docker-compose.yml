@@ -37,7 +37,7 @@ services:
     expose:
       - "3001"
     environment:
-      ENV: ${ENV:-production}
+      ENV: ${ENV:-staging}
       PORT: 3001
       DB_HOST: postgres
       DB_PORT: 5432
